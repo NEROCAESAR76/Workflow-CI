@@ -25,11 +25,9 @@ jobs:
     # 1. Menjalankan MLflow Project (Dipaksa menaruh mlruns di folder aktif)
     - name: Run MLflow Project
       env:
-        # Memberikan izin akses file store di Step 1
         MLFLOW_ALLOW_FILE_STORE: "true"
       run: |
         cd MLProject
-        # MENGUNCI LOKASI MLRUNS MENGGUNAKAN ABSOLUTE PATH BASH LINUX
         export MLFLOW_TRACKING_URI="file://$(pwd)/mlruns"
         
         echo "🚀 Menjalankan training MLflow..."
@@ -40,7 +38,7 @@ jobs:
           echo "❌ FATAL: mlruns tetap tidak dibuat oleh MLflow!"
           exit 1
         fi
-        echo "✅ Folder mlruns berhasil diamankan!""
+        echo "✅ Folder mlruns berhasil diamankan!"
 
     # 2. Menyimpan Artefak Model ke Repositori (Syarat Level Skilled)
     - name: Upload Model Artifacts
