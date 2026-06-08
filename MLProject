@@ -1,4 +1,4 @@
-name: Telco_Churn_Project
+name: Telco_Churn_Automated_Training
 
 conda_env: conda.yaml
 
