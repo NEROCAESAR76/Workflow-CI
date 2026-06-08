@@ -35,21 +35,25 @@ jobs:
         name: trained-model-artifacts
         path: mlruns/
 
-    # 3. Membuat Docker Image Otomatis menggunakan mlflow build-docker (Jalur Root)
+    # 3. Membuat Docker Image Otomatis menggunakan mlflow build-docker
     - name: Build Docker Image from MLflow Model
       env:
         MLFLOW_ALLOW_FILE_STORE: "true"
       run: |
-        # Mengatur tracking URI langsung ke folder mlruns di root terluar
-        export MLFLOW_TRACKING_URI="mlruns"
+        # 1. Mencari lokasi folder mlruns di seluruh repositori secara dinamis
+        MLRUNS_DIR=$(find . -type d -name "mlruns" | head -n 1)
         
-        # Mencari ID folder eksperimen kustom di folder root mlruns
-        EXP_ID=$(ls mlruns/ | grep -E '^[0-9]+$' | grep -v '^0$' || echo "0")
-        echo "Menggunakan Experiment ID: $EXP_ID"
+        if [ -z "$MLRUNS_DIR" ]; then
+          echo "❌ ERROR: Folder mlruns tidak ditemukan! Ini berarti proses training GAGAL atau file dataset hilang."
+          exit 1
+        fi
         
-        # Mengambil Run ID terbaru dari folder root mlruns
-        LATEST_RUN_ID=$(ls -t mlruns/$EXP_ID/ | grep -v "meta.yaml" | head -n 1)
-        echo "Menggunakan Run ID terbaru hasil training: $LATEST_RUN_ID"
+        echo "✅ Ditemukan database mlruns di: $MLRUNS_DIR"
+        export MLFLOW_TRACKING_URI="$MLRUNS_DIR"
         
-        # Membuat kontainer Docker otomatis dari model tersebut
+        # 2. Mengambil Run ID langsung dari struktur folder artifacts (Akurat 100%)
+        LATEST_RUN_ID=$(find $MLRUNS_DIR -type d -name "artifacts" | awk -F'/' '{print $(NF-1)}' | head -n 1)
+        echo "✅ Menggunakan Run ID terbaru: $LATEST_RUN_ID"
+        
+        # 3. Mengeksekusi pembuatan kontainer Docker
         mlflow models build-docker -m "runs:/$LATEST_RUN_ID/model" -n "nerosuprobo/workflow-ci-model:latest"

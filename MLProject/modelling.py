@@ -17,8 +17,10 @@ def main():
     # 2. Aktifkan Autolog dari MLflow agar parameter & metrik tercatat otomatis
     mlflow.sklearn.autolog()
 
-    # 3. Memuat data bersih (clean_data.csv) - Disesuaikan dengan struktur Workflow-CI
+# Memuat data bersih (clean_data.csv) dengan jaring pencarian yang lebih luas
     possible_paths = [
+        "telco_preprocessing/clean_data.csv",
+        "MLProject/telco_preprocessing/clean_data.csv",
         "namadataset_preprocessing/clean_data.csv",
         "MLProject/namadataset_preprocessing/clean_data.csv",
         "preprocessing/clean_data.csv",
@@ -35,9 +37,8 @@ def main():
         print(f"✅ Berhasil menemukan file data di: {data_path}")
         data = pd.read_csv(data_path)
     else:
-        print("❌ Error: File 'clean_data.csv' benar-benar tidak ditemukan.")
-        print(f"Posisi aktif terminal saat ini berada di: {os.getcwd()}")
-        return
+        # Hentikan program secara paksa jika data tidak ada agar GitHub Actions tahu ada yang salah!
+        raise FileNotFoundError("❌ ERROR FATAL: File 'clean_data.csv' tidak ditemukan! Pastikan file dataset sudah terdorong (ter-push) ke GitHub.")
 
     # 4. Memisahkan fitur (X) dengan target Churn (y)
     X = data.drop(columns=['Churn']) 
