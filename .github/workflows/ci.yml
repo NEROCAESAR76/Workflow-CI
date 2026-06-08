@@ -38,9 +38,20 @@ jobs:
     # 3. Membuat Docker Image Otomatis menggunakan mlflow build-docker (Syarat Level Advance - 4 pts)
     - name: Build Docker Image from MLflow Model
       run: |
-        # Mengambil RUN_ID terbaru dari folder mlruns yang berada di dalam MLProject
-        LATEST_RUN_ID=$(ls MLProject/mlruns/0/ | grep -v "meta.yaml" | head -n 1)
-        echo "Menggunakan Run ID terbaru: $LATEST_RUN_ID"
+        # Mengatur agar MLflow mencari data tracking di folder mlruns root
+        export MLFLOW_TRACKING_URI="mlruns"
         
-        # Menjalankan perintah build-docker dengan jalur model yang benar dan parameter versi baru
-        mlflow models build-docker -m "MLProject/mlruns/0/$LATEST_RUN_ID/artifacts/model" -n "nerosuprobo/workflow-ci-model:latest"
+        # Mengambil RUN_ID dari run terbaru secara otomatis menggunakan Python API MLflow
+        LATEST_RUN_ID=$(python -c "
+import mlflow
+client = mlflow.MlflowClient()
+experiment = client.get_experiment_by_name('Eksperimen_Model_Telco')
+runs = client.search_runs(experiment_ids=[experiment.experiment_id], order_by=['attributes.start_time DESC'], max_results=1)
+if runs:
+    print(runs[0].info.run_id)
+")
+        echo "Menggunakan Run ID terbaru hasil training: $LATEST_RUN_ID"
+        
+        # Menjalankan perintah build-docker menggunakan skema URI mlflow langsung (runs:/<run_id>/model)
+        # Cara ini dijamin 100% aman tanpa perlu pusing memikirkan letak jalur folder fisiknya
+        mlflow models build-docker -m "runs:/$LATEST_RUN_ID/model" -n "nerosuprobo/workflow-ci-model:latest"
