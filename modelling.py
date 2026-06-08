@@ -14,7 +14,18 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 
 model = RandomForestClassifier(n_estimators=100, max_depth=10, random_state=42)
 
-# Langsung start run aja, biarkan robot MLflow yang atur folder mlruns-nya
+# --- INI KUNCINYA ---
+# Bikin resep environment custom khusus conda-forge biar lolos hadangan ToS Anaconda
+custom_env = {
+    "name": "msml_env",
+    "channels": ["conda-forge"], # Murni open-source, tanpa 'defaults'
+    "dependencies": [
+        "python=3.12.7",
+        "pip",
+        {"pip": ["pandas", "scikit-learn", "mlflow==2.19.0"]}
+    ]
+}
+
 with mlflow.start_run():
     print("Melatih model...")
     model.fit(X_train, y_train)
@@ -22,6 +33,8 @@ with mlflow.start_run():
     acc = accuracy_score(y_test, y_pred)
     
     mlflow.log_metric("accuracy", acc)
-    mlflow.sklearn.log_model(model, "random_forest_model")
+    
+    # Masukin resep custom tadi ke dalam model saat di-save
+    mlflow.sklearn.log_model(model, "random_forest_model", conda_env=custom_env)
     
     print(f"Selesai! Akurasi: {acc:.2f}")
