@@ -39,7 +39,6 @@ jobs:
     - name: Build Docker Image from MLflow Model
       run: |
         # Mengambil RUN_ID dari run terbaru secara otomatis menggunakan Python API MLflow
-        # Diarahkan ke folder MLProject/mlruns tempat data eksperimen tersimpan
         LATEST_RUN_ID=$(python -c "
 import mlflow
 mlflow.set_tracking_uri('MLProject/mlruns')
