@@ -22,38 +22,45 @@ jobs:
         python -m pip install --upgrade pip
         pip install mlflow pandas scikit-learn
 
-    # 1. Menjalankan MLflow Project (Re-training Otomatis)
+    # 1. Menjalankan MLflow Project (Dipaksa menaruh mlruns di folder aktif)
     - name: Run MLflow Project
       run: |
         cd MLProject
+        # MENGUNCI LOKASI MLRUNS MENGGUNAKAN ABSOLUTE PATH BASH LINUX
+        export MLFLOW_TRACKING_URI="file://$(pwd)/mlruns"
+        
+        echo "🚀 Menjalankan training MLflow..."
         mlflow run . --entry-point main --env-manager local
+        
+        echo "🔍 Memverifikasi pembuatan folder mlruns..."
+        if [ ! -d "mlruns" ]; then
+          echo "❌ FATAL: mlruns tetap tidak dibuat oleh MLflow!"
+          exit 1
+        fi
+        echo "✅ Folder mlruns berhasil diamankan!"
 
-    # 2. Menyimpan Artefak Model ke Repositori (Mengarah ke root mlruns)
+    # 2. Menyimpan Artefak Model ke Repositori (Syarat Level Skilled)
     - name: Upload Model Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: trained-model-artifacts
-        path: mlruns/
+        path: MLProject/mlruns/
 
-    # 3. Membuat Docker Image Otomatis menggunakan mlflow build-docker
+    # 3. Membuat Docker Image Otomatis menggunakan mlflow build-docker (Syarat Level Advance)
     - name: Build Docker Image from MLflow Model
       env:
         MLFLOW_ALLOW_FILE_STORE: "true"
       run: |
-        # 1. Mencari lokasi folder mlruns di seluruh repositori secara dinamis
-        MLRUNS_DIR=$(find . -type d -name "mlruns" | head -n 1)
+        cd MLProject
+        export MLFLOW_TRACKING_URI="mlruns"
         
-        if [ -z "$MLRUNS_DIR" ]; then
-          echo "❌ ERROR: Folder mlruns tidak ditemukan! Ini berarti proses training GAGAL atau file dataset hilang."
-          exit 1
-        fi
+        # Mengambil Experiment ID
+        EXP_ID=$(ls mlruns/ | grep -E '^[0-9]+$' | grep -v '^0$' || echo "0")
+        echo "✅ Menggunakan Experiment ID: $EXP_ID"
         
-        echo "✅ Ditemukan database mlruns di: $MLRUNS_DIR"
-        export MLFLOW_TRACKING_URI="$MLRUNS_DIR"
-        
-        # 2. Mengambil Run ID langsung dari struktur folder artifacts (Akurat 100%)
-        LATEST_RUN_ID=$(find $MLRUNS_DIR -type d -name "artifacts" | awk -F'/' '{print $(NF-1)}' | head -n 1)
+        # Mengambil Run ID
+        LATEST_RUN_ID=$(ls -t mlruns/$EXP_ID/ | grep -v "meta.yaml" | head -n 1)
         echo "✅ Menggunakan Run ID terbaru: $LATEST_RUN_ID"
         
-        # 3. Mengeksekusi pembuatan kontainer Docker
+        # Jalankan Build Docker
         mlflow models build-docker -m "runs:/$LATEST_RUN_ID/model" -n "nerosuprobo/workflow-ci-model:latest"
