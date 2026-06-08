@@ -28,26 +28,27 @@ jobs:
         cd MLProject
         mlflow run . --entry-point main --env-manager local
 
-    # 2. Menyimpan Artefak Model ke Repositori (Syarat Level Skilled - 3 pts)
+    # 2. Menyimpan Artefak Model ke Repositori (Mengarah ke root mlruns)
     - name: Upload Model Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: trained-model-artifacts
-        path: MLProject/mlruns/
+        path: mlruns/
 
-    # 3. Membuat Docker Image Otomatis menggunakan mlflow build-docker (Syarat Level Advance - 4 pts)
+    # 3. Membuat Docker Image Otomatis menggunakan mlflow build-docker (Jalur Root)
     - name: Build Docker Image from MLflow Model
       env:
         MLFLOW_ALLOW_FILE_STORE: "true"
       run: |
-        export MLFLOW_TRACKING_URI="MLProject/mlruns"
+        # Mengatur tracking URI langsung ke folder mlruns di root terluar
+        export MLFLOW_TRACKING_URI="mlruns"
         
-        # Mencari ID folder eksperimen kustom selain folder '0' default
-        EXP_ID=$(ls MLProject/mlruns/ | grep -E '^[0-9]+$' | grep -v '^0$' || echo "0")
+        # Mencari ID folder eksperimen kustom di folder root mlruns
+        EXP_ID=$(ls mlruns/ | grep -E '^[0-9]+$' | grep -v '^0$' || echo "0")
         echo "Menggunakan Experiment ID: $EXP_ID"
         
-        # Mengambil Run ID terbaru berdasarkan urutan waktu modifikasi folder fisik
-        LATEST_RUN_ID=$(ls -t MLProject/mlruns/$EXP_ID/ | grep -v "meta.yaml" | head -n 1)
+        # Mengambil Run ID terbaru dari folder root mlruns
+        LATEST_RUN_ID=$(ls -t mlruns/$EXP_ID/ | grep -v "meta.yaml" | head -n 1)
         echo "Menggunakan Run ID terbaru hasil training: $LATEST_RUN_ID"
         
         # Membuat kontainer Docker otomatis dari model tersebut
