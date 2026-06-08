@@ -30,7 +30,7 @@ jobs:
     # 4. Menjalankan MLflow Project secara otomatis saat trigger terpantik
     - name: Run MLflow Project
       run: |
-        mlflow run MLProject --entry-point main --no-conda
+        mlflow run MLProject --entry-point main --env-manager local
 
     # 5. Menyimpan Artefak Model ke Repositori GitHub (Syarat Level SKILLED - 3 pts)
     - name: Upload Model Artifacts
