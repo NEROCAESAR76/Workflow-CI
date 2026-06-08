@@ -38,8 +38,8 @@ jobs:
           RUN_ID=$(ls -t mlruns/0/ | grep -v meta.yaml | head -1)
           echo "Dapat Run ID: $RUN_ID"
           
-          # Build Docker
-          mlflow models build-docker -m "runs:/$RUN_ID/random_forest_model" -n "${{ secrets.DOCKER_USERNAME }}/msml-model:latest"
+          # Build Docker (Tambahkan --env-manager conda di ujungnya)
+          mlflow models build-docker -m "runs:/$RUN_ID/random_forest_model" -n "${{ secrets.DOCKER_USERNAME }}/msml-model:latest" --env-manager conda
           
           # Push ke Docker Hub
           docker push "${{ secrets.DOCKER_USERNAME }}/msml-model:latest"
