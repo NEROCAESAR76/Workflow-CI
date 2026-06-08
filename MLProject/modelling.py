@@ -47,21 +47,28 @@ def main():
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
     # 5. Mulai eksperimen run dengan parameter tetap (TANPA GridSearchCV sesuai ketentuan)
-    with mlflow.start_run(run_name="Model_Standar_RandomForest"):
+    # Jika berjalan di GitHub Actions (MLflow Project), gunakan active run yang sudah ada
+    active_run = mlflow.active_run()
+    
+    if active_run is not None:
+        # Jika dipicu lewat MLflow Project di CI
+        print(f"🚀 Melatih model menggunakan Active Run ID dari MLProject: {active_run.info.run_id}")
         model = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=42)
-        
-        print("🚀 Melatih model utama dengan autolog...")
         model.fit(X_train, y_train)
-        
-        # Evaluasi model pada data testing
         predictions = model.predict(X_test)
         acc = accuracy_score(y_test, predictions)
-        
-        print("\n--- Hasil Evaluasi Model ---")
-        print(f"Akurasi Model Standar: {acc:.4f}")
-        print("\nClassification Report:")
-        print(classification_report(y_test, predictions))
-        print("✅ Metrik dan model berhasil direkam secara otomatis!")
-
-if __name__ == "__main__":
-    main()
+    else:
+        # Jika dijalankan manual di lokal laptop kamu
+        with mlflow.start_run(run_name="Model_Standar_RandomForest"):
+            model = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=42)
+            print("🚀 Melatih model utama dengan autolog...")
+            model.fit(X_train, y_train)
+            predictions = model.predict(X_test)
+            acc = accuracy_score(y_test, predictions)
+            
+    # Bagian evaluasi cetak laporan tetap diletakkan di luar blok agar selalu tereksekusi
+    print("\n--- Hasil Evaluasi Model ---")
+    print(f"Akurasi Model Standar: {acc:.4f}")
+    print("\nClassification Report:")
+    print(classification_report(y_test, predictions))
+    print("✅ Metrik dan model berhasil direkam secara otomatis!")
