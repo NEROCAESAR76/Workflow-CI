@@ -7,19 +7,22 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report
 
 def main():
-    # 1. Mengatur lokasi tracking server ke MLflow lokal komputer (Bukan DagsHub)
-    mlflow.set_tracking_uri("http://127.0.0.1:5000") 
+    # 1. Mengatur lokasi tracking server (Hanya set URI jika dijalankan secara lokal di laptop)
+    # Di GitHub Actions, MLflow akan otomatis mencatat ke folder mlruns lokal server
+    if not os.environ.get("GITHUB_ACTIONS"):
+        mlflow.set_tracking_uri("http://127.0.0.1:5000") 
+        
     mlflow.set_experiment("Eksperimen_Model_Telco")
 
     # 2. Aktifkan Autolog dari MLflow agar parameter & metrik tercatat otomatis
     mlflow.sklearn.autolog()
 
-    # 3. Memuat data bersih (clean_data.csv) menggunakan pendeteksian path otomatis
+    # 3. Memuat data bersih (clean_data.csv) - Disesuaikan dengan struktur Workflow-CI
     possible_paths = [
+        "namadataset_preprocessing/clean_data.csv",
+        "MLProject/namadataset_preprocessing/clean_data.csv",
         "preprocessing/clean_data.csv",
-        "clean_data.csv",
-        "../preprocessing/clean_data.csv",
-        "Eksperimen_SML_Nero/preprocessing/clean_data.csv"
+        "clean_data.csv"
     ]
     
     data_path = None
@@ -32,9 +35,8 @@ def main():
         print(f"✅ Berhasil menemukan file data di: {data_path}")
         data = pd.read_csv(data_path)
     else:
-        print("❌ Error: File 'clean_data.csv' benar-benar tidak ditemukan di folder lokal kamu.")
-        print(f"Posisi aktif terminal kamu saat ini berada di: {os.getcwd()}")
-        print("Silakan periksa kembali apakah file clean_data.csv sudah ada di laptop kamu.")
+        print("❌ Error: File 'clean_data.csv' benar-benar tidak ditemukan.")
+        print(f"Posisi aktif terminal saat ini berada di: {os.getcwd()}")
         return
 
     # 4. Memisahkan fitur (X) dengan target Churn (y)
@@ -46,10 +48,9 @@ def main():
 
     # 5. Mulai eksperimen run dengan parameter tetap (TANPA GridSearchCV sesuai ketentuan)
     with mlflow.start_run(run_name="Model_Standar_RandomForest"):
-        # Menggunakan parameter tetap bawaan, tidak ada modul tuning di file ini
         model = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=42)
         
-        print("🚀 Melatih model utama dengan autolog lokal...")
+        print("🚀 Melatih model utama dengan autolog...")
         model.fit(X_train, y_train)
         
         # Evaluasi model pada data testing
@@ -60,7 +61,7 @@ def main():
         print(f"Akurasi Model Standar: {acc:.4f}")
         print("\nClassification Report:")
         print(classification_report(y_test, predictions))
-        print("✅ Metrik dan model berhasil direkam secara otomatis di MLflow lokal kamu!")
+        print("✅ Metrik dan model berhasil direkam secara otomatis!")
 
 if __name__ == "__main__":
     main()
