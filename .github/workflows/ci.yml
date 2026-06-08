@@ -21,7 +21,6 @@ jobs:
 
       - name: Run MLflow Project
         run: |
-          # Menjalankan MLProject pakai env lokal biar ga ribet setup conda di server
           mlflow run . --env-manager local
 
       - name: Upload Artifacts ke GitHub (Syarat Skilled)
@@ -35,8 +34,8 @@ jobs:
 
       - name: Build and Push Docker Image (Syarat Advance)
         run: |
-          # Trik buat ngambil ID Eksperimen terbaru dari folder mlruns
-          RUN_ID=$(ls -td ./mlruns/1/* | head -1 | xargs basename)
+          # Ambil ID folder run terbaru dari dalam mlruns/0
+          RUN_ID=$(ls -t mlruns/0/ | grep -v meta.yaml | head -1)
           echo "Dapat Run ID: $RUN_ID"
           
           # Build Docker
