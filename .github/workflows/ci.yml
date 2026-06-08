@@ -28,30 +28,32 @@ jobs:
         cd MLProject
         mlflow run . --entry-point main --env-manager local
 
-    # 2. Menyimpan Artefak ke Repositori (Syarat Level Skilled - 3 pts)
+    # 2. Menyimpan Artefak Model ke Repositori (Syarat Level Skilled - 3 pts)
     - name: Upload Model Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: trained-model-artifacts
-        path: mlruns/
+        path: MLProject/mlruns/
 
     # 3. Membuat Docker Image Otomatis menggunakan mlflow build-docker (Syarat Level Advance - 4 pts)
     - name: Build Docker Image from MLflow Model
       run: |
-        # Mengatur agar MLflow mencari data tracking di folder mlruns root
-        export MLFLOW_TRACKING_URI="mlruns"
-        
         # Mengambil RUN_ID dari run terbaru secara otomatis menggunakan Python API MLflow
+        # Diarahkan ke folder MLProject/mlruns tempat data eksperimen tersimpan
         LATEST_RUN_ID=$(python -c "
 import mlflow
+mlflow.set_tracking_uri('MLProject/mlruns')
 client = mlflow.MlflowClient()
 experiment = client.get_experiment_by_name('Eksperimen_Model_Telco')
-runs = client.search_runs(experiment_ids=[experiment.experiment_id], order_by=['attributes.start_time DESC'], max_results=1)
-if runs:
-    print(runs[0].info.run_id)
+if experiment:
+    runs = client.search_runs(experiment_ids=[experiment.experiment_id], order_by=['attributes.start_time DESC'], max_results=1)
+    if runs:
+        print(runs[0].info.run_id)
 ")
         echo "Menggunakan Run ID terbaru hasil training: $LATEST_RUN_ID"
         
+        # Mengatur tracking URI ke subfolder proyek agar perintah build-docker tahu lokasi database mlruns
+        export MLFLOW_TRACKING_URI="MLProject/mlruns"
+        
         # Menjalankan perintah build-docker menggunakan skema URI mlflow langsung (runs:/<run_id>/model)
-        # Cara ini dijamin 100% aman tanpa perlu pusing memikirkan letak jalur folder fisiknya
         mlflow models build-docker -m "runs:/$LATEST_RUN_ID/model" -n "nerosuprobo/workflow-ci-model:latest"
