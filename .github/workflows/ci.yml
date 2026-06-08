@@ -3,38 +3,31 @@ name: Machine Learning Workflow CI
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
 
 jobs:
   train-model:
     runs-on: ubuntu-latest
 
     steps:
-    # 1. Mengunduh kode dari repositori ke server GitHub Actions
     - name: Checkout Repository
       uses: actions/checkout@v3
 
-    # 2. Menyiapkan lingkungan Python
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
 
-    # 3. Memasang dependensi dasar
     - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
         pip install mlflow pandas scikit-learn
 
-    # 4. Menjalankan MLflow Project secara otomatis saat trigger terpantik
     - name: Run MLflow Project
       run: |
-        mlflow run MLProject --entry-point main --env-manager local
+        mlflow run ./MLProject --entry-point main --env-manager local
 
-    # 5. Menyimpan Artefak Model ke Repositori GitHub (Syarat Level SKILLED - 3 pts)
     - name: Upload Model Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: trained-random-forest-model
+        name: trained-model-artifacts
         path: mlruns/
