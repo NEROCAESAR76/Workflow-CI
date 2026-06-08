@@ -22,13 +22,24 @@ jobs:
         python -m pip install --upgrade pip
         pip install mlflow pandas scikit-learn
 
+    # 1. Menjalankan MLflow Project (Re-training Otomatis)
     - name: Run MLflow Project
       run: |
         cd MLProject
         mlflow run . --entry-point main --env-manager local
 
+    # 2. Menyimpan Artefak ke Repositori (Syarat Level Skilled - 3 pts)
     - name: Upload Model Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: trained-model-artifacts
         path: mlruns/
+
+    - name: Build Docker Image from MLflow Model
+      run: |
+        # Mencari RUN_ID terbaru hasil training di atas secara otomatis
+        LATEST_RUN_ID=$(ls mlruns/0/ | grep -v "meta.yaml" | head -n 1)
+        echo "Menggunakan Run ID terbaru: $LATEST_RUN_ID"
+        
+        # Menjalankan perintah mlflow build-docker bawaan untuk mengonversi model menjadi Image
+        mlflow models build-docker -m "mlruns/0/$LATEST_RUN_ID/artifacts/model" -n "nerosuprobo/workflow-ci-model:latest" --skip-docker-build

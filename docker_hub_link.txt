@@ -1,0 +1,6 @@
+[KRITERIA 3 - ADVANCE: TAUTAN REPOSITORI DOCKER HUB]
+
+Berikut adalah tautan repositori Docker Hub resmi yang digunakan untuk menyimpan Docker Image dari proyek otomatisasi MLflow ini:
+
+Tautan Docker Hub:
+https://hub.docker.com/r/nerosuprobo/workflow-ci-model
